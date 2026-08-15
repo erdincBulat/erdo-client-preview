@@ -1,0 +1,502 @@
+/* Erdo Client Preview — visitor feedback widget */
+
+.erdo-client-preview-feedback {
+	--erdo-primary: #2271b1;
+	--erdo-primary-hover: #135e96;
+	--erdo-primary-soft: rgba(34, 113, 177, 0.12);
+	--erdo-success: #00a32a;
+	--erdo-success-bg: #edfaef;
+	--erdo-error: #d63638;
+	--erdo-error-bg: #fcf0f1;
+	--erdo-warning: #92400e;
+	--erdo-warning-bg: #fef3c7;
+	--erdo-done: #065f46;
+	--erdo-done-bg: #d1fae5;
+	--erdo-text: #1e1e1e;
+	--erdo-text-muted: #646970;
+	--erdo-border: #e2e4e7;
+	--erdo-shadow: 0 12px 40px rgba(0, 0, 0, 0.14), 0 2px 10px rgba(0, 0, 0, 0.08);
+
+	all: initial !important;
+	display: block !important;
+	position: fixed !important;
+	inset: auto auto 24px 24px !important;
+	bottom: 24px !important;
+	left: 24px !important;
+	top: auto !important;
+	right: auto !important;
+	z-index: 2147483647 !important;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+	font-size: 14px !important;
+	line-height: 1.5 !important;
+	color: var(--erdo-text) !important;
+	box-sizing: border-box !important;
+}
+
+/* Force a consistent baseline on every element inside the widget so the
+   host theme's global typography, spacing and list/link styles can't
+   leak into it and change its colors or sizes from site to site. */
+.erdo-client-preview-feedback *,
+.erdo-client-preview-feedback *::before,
+.erdo-client-preview-feedback *::after {
+	box-sizing: border-box !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	font-family: inherit !important;
+	font-size: inherit !important;
+	font-weight: normal !important;
+	font-style: normal !important;
+	line-height: inherit !important;
+	color: inherit !important;
+	text-align: left !important;
+	text-transform: none !important;
+	letter-spacing: normal !important;
+	text-decoration: none !important;
+	text-shadow: none !important;
+	list-style: none !important;
+	background: none !important;
+	box-shadow: none !important;
+	border-radius: 0 !important;
+	vertical-align: baseline !important;
+	white-space: normal !important;
+	-webkit-tap-highlight-color: transparent !important;
+}
+
+@media (max-width: 480px) {
+	.erdo-client-preview-feedback {
+		inset: auto auto 16px 16px !important;
+		bottom: 16px !important;
+		left: 16px !important;
+	}
+}
+
+/* ---- Toggle button ---- */
+
+.erdo-client-preview-feedback-toggle {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 9px !important;
+	cursor: pointer !important;
+	border: none !important;
+	border-radius: 999px !important;
+	padding: 14px 22px !important;
+	background: var(--erdo-primary) !important;
+	color: #fff !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	font-family: inherit !important;
+	line-height: 1 !important;
+	letter-spacing: 0.1px !important;
+	box-shadow: var(--erdo-shadow) !important;
+	transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+.erdo-client-preview-feedback-toggle:hover,
+.erdo-client-preview-feedback-toggle:focus-visible {
+	background: var(--erdo-primary-hover) !important;
+	transform: translateY(-2px) !important;
+	box-shadow: 0 16px 44px rgba(0, 0, 0, 0.18), 0 3px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.erdo-client-preview-feedback-toggle:active {
+	transform: translateY(0) !important;
+}
+
+.erdo-client-preview-feedback-toggle:focus-visible {
+	outline: 2px solid #fff !important;
+	outline-offset: 2px !important;
+}
+
+.erdo-client-preview-feedback-toggle-icon {
+	flex-shrink: 0 !important;
+	transition: transform 0.18s ease !important;
+}
+
+.erdo-client-preview-feedback[data-open="true"] .erdo-client-preview-feedback-toggle-icon {
+	transform: scale(0.92) rotate(-8deg) !important;
+}
+
+/* ---- Panel ---- */
+
+.erdo-client-preview-feedback-panel {
+	position: absolute !important;
+	left: 0 !important;
+	bottom: calc(100% + 14px) !important;
+	width: 380px !important;
+	max-width: calc(100vw - 48px) !important;
+	max-height: min(620px, 78vh) !important;
+	display: flex !important;
+	flex-direction: column !important;
+	overflow: hidden !important;
+	border-radius: 16px !important;
+	background: #fff !important;
+	box-shadow: var(--erdo-shadow) !important;
+	border: 1px solid rgba(0, 0, 0, 0.04) !important;
+	opacity: 0 !important;
+	transform: translateY(10px) scale(0.98) !important;
+	transform-origin: bottom left !important;
+	transition: opacity 0.18s ease, transform 0.18s ease !important;
+	pointer-events: none !important;
+}
+
+.erdo-client-preview-feedback-panel.is-open {
+	opacity: 1 !important;
+	transform: translateY(0) scale(1) !important;
+	pointer-events: auto !important;
+}
+
+.erdo-client-preview-feedback-panel[hidden] {
+	display: none !important;
+}
+
+@media (max-width: 480px) {
+	.erdo-client-preview-feedback-panel {
+		width: calc(100vw - 32px) !important;
+		max-height: min(560px, 72vh) !important;
+	}
+}
+
+/* ---- Panel header ---- */
+
+.erdo-client-preview-feedback-header {
+	display: flex !important;
+	align-items: flex-start !important;
+	justify-content: space-between !important;
+	gap: 12px !important;
+	padding: 20px 20px 0 !important;
+	flex-shrink: 0 !important;
+}
+
+.erdo-client-preview-feedback-heading {
+	min-width: 0 !important;
+}
+
+.erdo-client-preview-feedback-title {
+	margin: 0 0 4px !important;
+	font-size: 16px !important;
+	font-weight: 700 !important;
+	color: var(--erdo-text) !important;
+}
+
+.erdo-client-preview-feedback-description {
+	color: var(--erdo-text-muted) !important;
+	font-size: 13px !important;
+	line-height: 1.5 !important;
+}
+
+.erdo-client-preview-feedback-close {
+	flex-shrink: 0 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 30px !important;
+	height: 30px !important;
+	margin-top: -4px !important;
+	margin-right: -6px !important;
+	border-radius: 8px !important;
+	background: transparent !important;
+	color: var(--erdo-text-muted) !important;
+	cursor: pointer !important;
+	transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+.erdo-client-preview-feedback-close:hover,
+.erdo-client-preview-feedback-close:focus-visible {
+	background: #f0f0f1 !important;
+	color: var(--erdo-text) !important;
+}
+
+/* ---- Scrollable body ---- */
+
+.erdo-client-preview-feedback-body {
+	overflow-y: auto !important;
+	padding: 16px 20px 20px !important;
+}
+
+.erdo-client-preview-feedback-body::-webkit-scrollbar {
+	width: 8px !important;
+}
+
+.erdo-client-preview-feedback-body::-webkit-scrollbar-thumb {
+	background: #d6d8db !important;
+	border-radius: 999px !important;
+}
+
+/* ---- Notice / success / error banners ---- */
+
+.erdo-client-preview-feedback-notice:empty {
+	display: none !important;
+}
+
+.erdo-client-preview-feedback-success {
+	display: flex !important;
+	align-items: flex-start !important;
+	gap: 10px !important;
+	margin: 0 0 16px !important;
+	padding: 12px 14px !important;
+	border-radius: 10px !important;
+	background: var(--erdo-success-bg) !important;
+	color: #00782f !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	line-height: 1.5 !important;
+	animation: erdo-client-preview-feedback-fade-in 0.25s ease !important;
+}
+
+.erdo-client-preview-feedback-success-icon {
+	flex-shrink: 0 !important;
+	margin-top: 1px !important;
+	color: var(--erdo-success) !important;
+}
+
+.erdo-client-preview-feedback-error {
+	display: flex !important;
+	align-items: flex-start !important;
+	gap: 10px !important;
+	margin: 0 0 16px !important;
+	padding: 12px 14px !important;
+	border-radius: 10px !important;
+	background: var(--erdo-error-bg) !important;
+	color: var(--erdo-error) !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	line-height: 1.5 !important;
+	animation: erdo-client-preview-feedback-fade-in 0.25s ease !important;
+}
+
+.erdo-client-preview-feedback-error-icon {
+	flex-shrink: 0 !important;
+	margin-top: 1px !important;
+	color: var(--erdo-error) !important;
+}
+
+/* ---- Form ---- */
+
+.erdo-client-preview-feedback-form {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 12px !important;
+}
+
+.erdo-client-preview-feedback-field {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 6px !important;
+}
+
+.erdo-client-preview-feedback-field label {
+	font-weight: 600 !important;
+	font-size: 12px !important;
+	color: var(--erdo-text) !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.4px !important;
+}
+
+.erdo-client-preview-feedback-field input,
+.erdo-client-preview-feedback-field textarea {
+	width: 100% !important;
+	padding: 10px 12px !important;
+	border: 1.5px solid var(--erdo-border) !important;
+	border-radius: 10px !important;
+	background: #fbfbfc !important;
+	font-family: inherit !important;
+	font-size: 14px !important;
+	line-height: 1.5 !important;
+	color: var(--erdo-text) !important;
+	transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease !important;
+	resize: vertical !important;
+}
+
+.erdo-client-preview-feedback-field input::placeholder,
+.erdo-client-preview-feedback-field textarea::placeholder {
+	color: #9aa0a6 !important;
+}
+
+.erdo-client-preview-feedback-field input:focus,
+.erdo-client-preview-feedback-field textarea:focus {
+	border-color: var(--erdo-primary) !important;
+	background: #fff !important;
+	outline: none !important;
+	box-shadow: 0 0 0 4px var(--erdo-primary-soft) !important;
+}
+
+.erdo-client-preview-feedback-submit {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 8px !important;
+	cursor: pointer !important;
+	width: 100% !important;
+	padding: 11px 16px !important;
+	margin-top: 2px !important;
+	border: none !important;
+	border-radius: 10px !important;
+	background: var(--erdo-primary) !important;
+	color: #fff !important;
+	font-family: inherit !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	line-height: 1.5 !important;
+	transition: background-color 0.15s ease, transform 0.15s ease !important;
+}
+
+.erdo-client-preview-feedback-submit:hover,
+.erdo-client-preview-feedback-submit:focus-visible {
+	background: var(--erdo-primary-hover) !important;
+}
+
+.erdo-client-preview-feedback-submit:active {
+	transform: scale(0.98) !important;
+}
+
+.erdo-client-preview-feedback-submit:disabled {
+	cursor: not-allowed !important;
+	opacity: 0.75 !important;
+}
+
+.erdo-client-preview-feedback-spinner {
+	width: 14px !important;
+	height: 14px !important;
+	border: 2px solid rgba(255, 255, 255, 0.4) !important;
+	border-top-color: #fff !important;
+	border-radius: 50% !important;
+	animation: erdo-client-preview-feedback-spin 0.6s linear infinite !important;
+}
+
+@keyframes erdo-client-preview-feedback-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ---- Past feedback (history) ---- */
+
+.erdo-client-preview-feedback-history {
+	margin-top: 18px !important;
+	padding-top: 16px !important;
+	border-top: 1px solid var(--erdo-border) !important;
+}
+
+.erdo-client-preview-feedback-history[hidden] {
+	display: none !important;
+}
+
+.erdo-client-preview-feedback-history-title {
+	margin: 0 0 10px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	color: var(--erdo-text) !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.4px !important;
+}
+
+.erdo-client-preview-feedback-history-list {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 8px !important;
+	max-height: 200px !important;
+	overflow-y: auto !important;
+}
+
+.erdo-client-preview-feedback-history-item {
+	display: flex !important;
+	align-items: flex-start !important;
+	gap: 10px !important;
+	padding: 10px !important;
+	border-radius: 10px !important;
+	background: #fbfbfc !important;
+}
+
+.erdo-client-preview-feedback-history-avatar {
+	flex-shrink: 0 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 26px !important;
+	height: 26px !important;
+	border-radius: 50% !important;
+	background: var(--erdo-primary-soft) !important;
+	color: var(--erdo-primary) !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	text-transform: uppercase !important;
+}
+
+.erdo-client-preview-feedback-history-content {
+	flex: 1 !important;
+	min-width: 0 !important;
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 6px !important;
+}
+
+.erdo-client-preview-feedback-history-message {
+	font-size: 13px !important;
+	line-height: 1.5 !important;
+	color: var(--erdo-text) !important;
+	white-space: pre-wrap !important;
+	word-break: break-word !important;
+}
+
+.erdo-client-preview-feedback-history-meta {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 8px !important;
+}
+
+.erdo-client-preview-feedback-history-date {
+	font-size: 11px !important;
+	color: var(--erdo-text-muted) !important;
+}
+
+.erdo-client-preview-feedback-history-status {
+	display: inline-block !important;
+	padding: 2px 8px !important;
+	border-radius: 10px !important;
+	font-size: 10px !important;
+	font-weight: 700 !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.4px !important;
+	white-space: nowrap !important;
+}
+
+.erdo-client-preview-feedback-history-status--in_progress {
+	background: var(--erdo-warning-bg) !important;
+	color: var(--erdo-warning) !important;
+}
+
+.erdo-client-preview-feedback-history-status--completed {
+	background: var(--erdo-done-bg) !important;
+	color: var(--erdo-done) !important;
+}
+
+.erdo-client-preview-feedback-history-reply {
+	margin-top: 4px !important;
+	padding: 8px 10px !important;
+	border-radius: 8px !important;
+	border-left: 3px solid var(--erdo-primary) !important;
+	background: var(--erdo-primary-soft) !important;
+	color: var(--erdo-text) !important;
+	font-size: 12px !important;
+	line-height: 1.5 !important;
+	white-space: pre-wrap !important;
+	word-break: break-word !important;
+}
+
+.erdo-client-preview-feedback-history-reply-label {
+	font-weight: 700 !important;
+	color: var(--erdo-primary) !important;
+}
+
+@keyframes erdo-client-preview-feedback-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}

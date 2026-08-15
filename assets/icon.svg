@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2271b1"/>
+      <stop offset="1" stop-color="#135e96"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="40" fill="url(#bg)"/>
+  <g transform="translate(128,130)">
+    <g>
+      <animateTransform attributeName="transform" type="scale"
+        values="1 1;1 1;1 0.06;1 0.06;1 1;1 1"
+        keyTimes="0;0.78;0.85;0.9;0.95;1"
+        dur="2s" repeatCount="indefinite"/>
+      <path d="M-98 0 C-70 -52 -18 -66 0 -66 C18 -66 70 -52 98 0 C70 52 18 66 0 66 C-18 66 -70 52 -98 0 Z"
+            fill="none" stroke="#ffffff" stroke-width="12" stroke-linejoin="round"/>
+      <circle cx="0" cy="0" r="38" fill="#ffffff"/>
+      <path d="M-14 -12 v-6 a14 14 0 0 1 28 0 v6" fill="none" stroke="#135e96" stroke-width="7" stroke-linecap="round"/>
+      <rect x="-22" y="-14" width="44" height="36" rx="6" fill="#135e96"/>
+      <circle cx="0" cy="3" r="5" fill="#ffffff"/>
+    </g>
+  </g>
+</svg>
