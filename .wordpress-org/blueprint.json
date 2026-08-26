@@ -1,0 +1,26 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"meta": {
+		"title": "Erdo Client Preview",
+		"author": "erdincbulat",
+		"description": "Try Erdo Client Preview instantly: magic link client access, visitor feedback, and live on-page annotations, no install required."
+	},
+	"landingPage": "/wp-admin/admin.php?page=erdo-client-preview",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "latest"
+	},
+	"login": true,
+	"steps": [
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "wordpress.org/plugins",
+				"slug": "erdo-client-preview"
+			},
+			"options": {
+				"activate": true
+			}
+		}
+	]
+}
