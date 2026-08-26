@@ -177,6 +177,10 @@ The plugin is designed and tested for single-site installations. Multisite compa
 
 Erdo Client Preview stores magic link tokens (hashed, never raw), settings, email subscribers, visitor feedback, and annotations in your WordPress database — nothing is sent to a third-party server. Uninstalling the plugin through the WordPress admin removes all of its database tables and options automatically.
 
+== Contribute ==
+
+Erdo Client Preview is developed in the open on GitHub: [github.com/erdincBulat/erdo-client-preview](https://github.com/erdincBulat/erdo-client-preview). Found a bug or have a feature idea? Open an issue or a pull request there.
+
 == Screenshots ==
 
 1. Magic links panel — create named bypass links with individual expiry dates and redirect URLs; copy, revoke, and track view counts per link.
