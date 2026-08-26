@@ -51,6 +51,10 @@ $sm_feedback_sent = isset( $sm_feedback_sent ) ? (bool) $sm_feedback_sent : fals
 					<label for="erdo-client-preview-feedback-message"><?php esc_html_e( 'Your feedback', 'erdo-client-preview' ); ?></label>
 					<textarea id="erdo-client-preview-feedback-message" name="erdo_feedback_message" rows="4" maxlength="2000" required="required"></textarea>
 				</p>
+				<p class="erdo-client-preview-feedback-field erdo-client-preview-feedback-field--hp" aria-hidden="true">
+					<label for="erdo-client-preview-feedback-url"><?php esc_html_e( 'Website', 'erdo-client-preview' ); ?></label>
+					<input type="text" id="erdo-client-preview-feedback-url" name="erdo_feedback_url" tabindex="-1" autocomplete="off" />
+				</p>
 				<p>
 					<button type="submit" name="erdo_client_preview_feedback_submit" value="1" class="erdo-client-preview-feedback-submit">
 						<span class="erdo-client-preview-feedback-submit-label"><?php esc_html_e( 'Send Feedback', 'erdo-client-preview' ); ?></span>

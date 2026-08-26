@@ -5,7 +5,7 @@
  * Description:       Site access control with magic link bypass — generate a private link so clients can preview the live site while everyone else sees your coming soon or maintenance page.
  * Version:           1.4.0
  * Requires at least: 6.0
- * Tested up to:      7.0
+ * Tested up to:      7.1
  * Requires PHP:      7.4
  * Author:            Erdinc Bulat
  * Author URI:        https://erdincbulat.com

@@ -291,9 +291,10 @@
 			form.addEventListener( 'submit', function ( event ) {
 				event.preventDefault();
 
-				var nameInput    = form.querySelector( '#erdo-client-preview-feedback-name' );
-				var messageInput = form.querySelector( '#erdo-client-preview-feedback-message' );
-				var nonceInput   = form.querySelector( '[name="erdo_feedback_nonce"]' );
+				var nameInput     = form.querySelector( '#erdo-client-preview-feedback-name' );
+				var messageInput  = form.querySelector( '#erdo-client-preview-feedback-message' );
+				var nonceInput    = form.querySelector( '[name="erdo_feedback_nonce"]' );
+				var honeypotInput = form.querySelector( '[name="erdo_feedback_url"]' );
 
 				var name    = nameInput ? nameInput.value.trim() : '';
 				var message = messageInput ? messageInput.value.trim() : '';
@@ -310,7 +311,8 @@
 					body: JSON.stringify( {
 						name: name,
 						message: message,
-						nonce: nonceInput ? nonceInput.value : ''
+						nonce: nonceInput ? nonceInput.value : '',
+						erdo_feedback_url: honeypotInput ? honeypotInput.value : ''
 					} )
 				} )
 					.then( function ( response ) {

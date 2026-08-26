@@ -15,6 +15,11 @@ class Erdo_Client_Preview_Frontend {
 
 	const SUBSCRIBERS_KEY = 'erdo_client_preview_subscribers';
 
+	// Anti-spam limits for the anonymous visitor feedback endpoint.
+	const FEEDBACK_RATE_LIMIT_COOLDOWN = 15;             // seconds required between two submissions from the same IP
+	const FEEDBACK_RATE_LIMIT_MAX      = 5;               // max submissions per IP within the window below
+	const FEEDBACK_RATE_LIMIT_WINDOW   = HOUR_IN_SECONDS;
+
 	public function register( Erdo_Client_Preview_Loader $loader ): void {
 		$loader->add_action( 'init',                    $this, 'handle_special_params',  1 );
 		$loader->add_action( 'template_redirect',       $this, 'maybe_show_maintenance', 1 );
@@ -130,9 +135,10 @@ class Erdo_Client_Preview_Frontend {
 				'callback'            => array( $this, 'rest_submit_feedback' ),
 				'permission_callback' => '__return_true',
 				'args'                => array(
-					'name'    => array( 'required' => true ),
-					'message' => array( 'required' => true ),
-					'nonce'   => array( 'required' => true ),
+					'name'               => array( 'required' => true ),
+					'message'            => array( 'required' => true ),
+					'nonce'              => array( 'required' => true ),
+					'erdo_feedback_url'  => array( 'required' => false ),
 				),
 			)
 		);
@@ -217,6 +223,11 @@ class Erdo_Client_Preview_Frontend {
 			return new WP_Error( 'erdo_feedback_disabled', __( 'Feedback is currently disabled.', 'erdo-client-preview' ), array( 'status' => 403 ) );
 		}
 
+		$honeypot = sanitize_text_field( (string) $request->get_param( 'erdo_feedback_url' ) );
+		if ( $this->feedback_honeypot_triggered( $honeypot ) ) {
+			return new WP_Error( 'erdo_feedback_failed', __( 'An error occurred. Please try again.', 'erdo-client-preview' ), array( 'status' => 400 ) );
+		}
+
 		$nonce = sanitize_text_field( (string) $request->get_param( 'nonce' ) );
 		if ( ! wp_verify_nonce( $nonce, 'erdo_client_preview_feedback' ) ) {
 			return new WP_Error( 'erdo_invalid_nonce', __( 'An error occurred. Please try again.', 'erdo-client-preview' ), array( 'status' => 403 ) );
@@ -227,6 +238,10 @@ class Erdo_Client_Preview_Frontend {
 
 		if ( '' === $name || '' === $message ) {
 			return new WP_Error( 'erdo_missing_fields', __( 'An error occurred. Please try again.', 'erdo-client-preview' ), array( 'status' => 400 ) );
+		}
+
+		if ( $this->feedback_rate_limited( $this->get_visitor_ip() ) ) {
+			return new WP_Error( 'erdo_feedback_rate_limited', __( "You're submitting feedback too quickly. Please wait a moment and try again.", 'erdo-client-preview' ), array( 'status' => 429 ) );
 		}
 
 		$feedback_id = $this->db->add_feedback( $name, $message );
@@ -449,12 +464,54 @@ class Erdo_Client_Preview_Frontend {
 	 * No-JS fallback: handles a classic <form> POST submission of the
 	 * feedback form and redirects back with ?erdo_feedback=sent.
 	 */
+	/**
+	 * True if the honeypot field was filled in — a real visitor never sees
+	 * or fills it, so a non-empty value means the submission came from a bot.
+	 */
+	private function feedback_honeypot_triggered( string $value ): bool {
+		return '' !== trim( $value );
+	}
+
+	/**
+	 * Per-IP flood control for the anonymous feedback endpoint: a short
+	 * cooldown between submissions plus a rolling cap per hour. Also records
+	 * the attempt, so this must only be called once validation would
+	 * otherwise let the submission through.
+	 */
+	private function feedback_rate_limited( string $ip ): bool {
+		if ( '' === $ip ) {
+			return false;
+		}
+
+		$cooldown_key = 'erdo_fb_cd_' . md5( $ip );
+		if ( false !== get_transient( $cooldown_key ) ) {
+			return true;
+		}
+
+		$count_key = 'erdo_fb_ct_' . md5( $ip );
+		$count     = (int) get_transient( $count_key );
+
+		if ( $count >= self::FEEDBACK_RATE_LIMIT_MAX ) {
+			return true;
+		}
+
+		set_transient( $cooldown_key, 1, self::FEEDBACK_RATE_LIMIT_COOLDOWN );
+		set_transient( $count_key, $count + 1, self::FEEDBACK_RATE_LIMIT_WINDOW );
+
+		return false;
+	}
+
 	private function handle_feedback_submission(): void {
 		if ( ! isset( $_POST['erdo_client_preview_feedback_submit'] ) ) {
 			return;
 		}
 
 		if ( ! $this->settings->get( 'feedback_enable' ) ) {
+			return;
+		}
+
+		$honeypot = isset( $_POST['erdo_feedback_url'] ) ? sanitize_text_field( wp_unslash( $_POST['erdo_feedback_url'] ) ) : '';
+		if ( $this->feedback_honeypot_triggered( $honeypot ) ) {
 			return;
 		}
 
@@ -467,6 +524,10 @@ class Erdo_Client_Preview_Frontend {
 		$message = isset( $_POST['erdo_feedback_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['erdo_feedback_message'] ) ) : '';
 
 		if ( '' === $name || '' === $message ) {
+			return;
+		}
+
+		if ( $this->feedback_rate_limited( $this->get_visitor_ip() ) ) {
 			return;
 		}
 

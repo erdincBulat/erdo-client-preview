@@ -285,6 +285,18 @@
 	gap: 6px !important;
 }
 
+/* Honeypot: invisible to real visitors, but a plain input field a naive
+   bot's autofill will still find and fill in — used to silently drop
+   spam submissions without a visible CAPTCHA. */
+.erdo-client-preview-feedback-field--hp {
+	position: absolute !important;
+	left: -9999px !important;
+	top: -9999px !important;
+	width: 1px !important;
+	height: 1px !important;
+	overflow: hidden !important;
+}
+
 .erdo-client-preview-feedback-field label {
 	font-weight: 600 !important;
 	font-size: 12px !important;
