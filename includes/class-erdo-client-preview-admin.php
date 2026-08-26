@@ -20,6 +20,8 @@ class Erdo_Client_Preview_Admin {
 		$loader->add_action( 'admin_post_em_revoke',                                                   $this, 'handle_revoke' );
 		$loader->add_action( 'admin_post_em_delete',                                                   $this, 'handle_delete' );
 		$loader->add_action( 'admin_post_em_toggle',                                                   $this, 'handle_toggle' );
+		$loader->add_action( 'admin_post_erdo_client_preview_export_settings',                         $this, 'handle_export_settings' );
+		$loader->add_action( 'admin_post_erdo_client_preview_import_settings',                         $this, 'handle_import_settings' );
 		$loader->add_action( 'admin_init',                                                             $this, 'handle_feedback_actions' );
 		$loader->add_action( 'admin_init',                                                             $this, 'handle_annotation_actions' );
 		$loader->add_action( 'wp_ajax_erdo_client_preview_feedback_reply',                                    $this, 'ajax_save_feedback_reply' );
@@ -28,6 +30,7 @@ class Erdo_Client_Preview_Admin {
 		$loader->add_action( 'update_option_' . Erdo_Client_Preview_Settings::OPTION_KEY,                $this, 'reschedule_cron', 10, 2 );
 		$loader->add_filter( 'plugin_action_links_' . plugin_basename( ERDO_CLIENT_PREVIEW_PLUGIN_FILE ), $this, 'plugin_action_links', 10, 1 );
 		$loader->add_filter( 'admin_footer_text',                                                      $this, 'whitelabel_footer', 100 );
+		$loader->add_filter( 'site_status_tests',                                                      $this, 'register_site_health_tests' );
 	}
 
 	public function add_settings_page(): void {
@@ -193,11 +196,19 @@ class Erdo_Client_Preview_Admin {
 				'feedback_status_updated'   => __( 'Feedback status updated.', 'erdo-client-preview' ),
 				'annotation_deleted'        => __( 'Annotation deleted.', 'erdo-client-preview' ),
 				'annotation_status_updated' => __( 'Annotation status updated.', 'erdo-client-preview' ),
+				'settings_imported'         => __( 'Settings imported.', 'erdo-client-preview' ),
+			);
+			$error_messages = array(
+				'settings_import_failed' => __( 'Could not import settings — the file was invalid or not exported from this plugin.', 'erdo-client-preview' ),
 			);
 			if ( $msg && isset( $messages[ $msg ] ) ) :
 				?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php echo esc_html( $messages[ $msg ] ); ?></p>
+				</div>
+			<?php elseif ( $msg && isset( $error_messages[ $msg ] ) ) : ?>
+				<div class="notice notice-error is-dismissible">
+					<p><?php echo esc_html( $error_messages[ $msg ] ); ?></p>
 				</div>
 			<?php endif; ?>
 
@@ -918,6 +929,33 @@ class Erdo_Client_Preview_Admin {
 					</div>
 					<?php endif; ?>
 
+					<!-- Import / Export Settings -->
+					<div class="sm-card">
+						<h2><?php esc_html_e( 'Import / Export Settings', 'erdo-client-preview' ); ?></h2>
+						<p class="description" style="margin-bottom:12px">
+							<?php esc_html_e( 'Copy this configuration to another site — handy when you manage several client sites with the same setup.', 'erdo-client-preview' ); ?>
+						</p>
+
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-bottom:16px">
+							<?php wp_nonce_field( 'erdo_client_preview_export_settings' ); ?>
+							<input type="hidden" name="action" value="erdo_client_preview_export_settings">
+							<button type="submit" class="button"><?php esc_html_e( 'Export Settings (.json)', 'erdo-client-preview' ); ?></button>
+						</form>
+
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
+							<?php wp_nonce_field( 'erdo_client_preview_import_settings' ); ?>
+							<input type="hidden" name="action" value="erdo_client_preview_import_settings">
+							<div class="sm-field">
+								<input type="file" name="erdo_client_preview_import_file" accept="application/json,.json" required>
+							</div>
+							<p class="description"><?php esc_html_e( 'The emergency rescue key is site-specific and is never exported or overwritten by an import.', 'erdo-client-preview' ); ?></p>
+							<button type="submit" class="button button-primary"
+								onclick="return confirm('<?php echo esc_js( __( 'This will overwrite your current settings. Continue?', 'erdo-client-preview' ) ); ?>')">
+								<?php esc_html_e( 'Import Settings', 'erdo-client-preview' ); ?>
+							</button>
+						</form>
+					</div>
+
 				</div>
 
 			</div>
@@ -1205,6 +1243,73 @@ class Erdo_Client_Preview_Admin {
 		exit;
 	}
 
+	/**
+	 * Downloads the current settings as a JSON file so they can be re-imported
+	 * on another site (e.g. rolling out the same setup across client sites).
+	 * The rescue key is deliberately excluded — it's a site-specific secret.
+	 */
+	public function handle_export_settings(): void {
+		check_admin_referer( 'erdo_client_preview_export_settings' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Unauthorized.', 'erdo-client-preview' ) );
+		}
+
+		$settings = $this->settings->all();
+		unset( $settings['rescue_key'] );
+
+		$payload = array(
+			'plugin'      => 'erdo-client-preview',
+			'version'     => ERDO_CLIENT_PREVIEW_VERSION,
+			'exported_at' => gmdate( 'c' ),
+			'settings'    => $settings,
+		);
+
+		nocache_headers();
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="erdo-client-preview-settings-' . gmdate( 'Y-m-d' ) . '.json"' );
+		echo wp_json_encode( $payload, JSON_PRETTY_PRINT );
+		exit;
+	}
+
+	/**
+	 * Restores settings from a previously exported JSON file. Runs the same
+	 * sanitize() whitelist used when saving the form normally, so an import
+	 * can't introduce a field the settings page itself wouldn't allow — and
+	 * sanitize() always preserves this site's own rescue key regardless of
+	 * what (if anything) the imported file contains for it.
+	 */
+	public function handle_import_settings(): void {
+		check_admin_referer( 'erdo_client_preview_import_settings' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Unauthorized.', 'erdo-client-preview' ) );
+		}
+
+		$redirect = admin_url( 'admin.php?page=erdo-client-preview' );
+
+		$has_file = isset( $_FILES['erdo_client_preview_import_file']['tmp_name'], $_FILES['erdo_client_preview_import_file']['error'] )
+			&& UPLOAD_ERR_OK === $_FILES['erdo_client_preview_import_file']['error'];
+
+		if ( ! $has_file ) {
+			wp_safe_redirect( add_query_arg( 'em_msg', 'settings_import_failed', $redirect ) );
+			exit;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
+		$raw  = file_get_contents( $_FILES['erdo_client_preview_import_file']['tmp_name'] );
+		$data = json_decode( (string) $raw, true );
+
+		if ( ! is_array( $data ) || 'erdo-client-preview' !== ( $data['plugin'] ?? '' ) || ! is_array( $data['settings'] ?? null ) ) {
+			wp_safe_redirect( add_query_arg( 'em_msg', 'settings_import_failed', $redirect ) );
+			exit;
+		}
+
+		$sanitized = $this->settings->sanitize( $data['settings'] );
+		update_option( Erdo_Client_Preview_Settings::OPTION_KEY, $sanitized );
+
+		wp_safe_redirect( add_query_arg( 'em_msg', 'settings_imported', $redirect ) );
+		exit;
+	}
+
 	public function reschedule_cron( $old_value, $new_value ): void {
 		wp_clear_scheduled_hook( 'erdo_client_preview_schedule_end' );
 		if ( ! empty( $new_value['schedule_enable'] ) && ! empty( $new_value['schedule_end'] ) ) {
@@ -1229,5 +1334,79 @@ class Erdo_Client_Preview_Admin {
 		return isset( $_SERVER['REMOTE_ADDR'] )
 			? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
 			: '';
+	}
+
+	// -------------------------------------------------------------------------
+	// Site Health
+	// -------------------------------------------------------------------------
+
+	public function register_site_health_tests( array $tests ): array {
+		$tests['direct']['erdo_client_preview_auth_keys'] = array(
+			'label' => __( 'Erdo Client Preview: magic link signing keys', 'erdo-client-preview' ),
+			'test'  => array( $this, 'site_health_test_auth_keys' ),
+		);
+		return $tests;
+	}
+
+	/**
+	 * Magic link tokens and the bypass cookie are HMAC-signed using AUTH_KEY
+	 * and SECURE_AUTH_KEY (see Erdo_Client_Preview_Token). If either is left
+	 * at its wp-config-sample.php placeholder, empty, or identical to the
+	 * other, that signature is far weaker than it looks — flag it here
+	 * rather than silently trusting whatever wp-config.php happens to have.
+	 */
+	public function site_health_test_auth_keys(): array {
+		$result = array(
+			'label'       => __( 'Magic link signing keys are properly configured', 'erdo-client-preview' ),
+			'status'      => 'good',
+			'badge'       => array(
+				'label' => __( 'Security', 'erdo-client-preview' ),
+				'color' => 'blue',
+			),
+			'description' => sprintf(
+				'<p>%s</p>',
+				__( 'Erdo Client Preview signs magic link tokens and the bypass cookie using your site’s AUTH_KEY and SECURE_AUTH_KEY. Both are defined and look like unique secrets.', 'erdo-client-preview' )
+			),
+			'actions'     => '',
+			'test'        => 'erdo_client_preview_auth_keys',
+		);
+
+		$problem = $this->weak_auth_key_message();
+
+		if ( '' !== $problem ) {
+			$result['status']         = 'critical';
+			$result['label']          = __( 'Magic link signing keys need attention', 'erdo-client-preview' );
+			$result['badge']['color'] = 'red';
+			$result['description']    = '<p>' . esc_html( $problem ) . '</p>';
+			$result['actions']        = sprintf(
+				'<p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p>',
+				esc_url( 'https://developer.wordpress.org/apis/wp-config-php/#security-keys' ),
+				esc_html__( 'Learn how to generate new security keys', 'erdo-client-preview' )
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * @return string Empty string if the keys look fine, otherwise a
+	 *                human-readable description of the problem.
+	 */
+	private function weak_auth_key_message(): string {
+		if ( ! defined( 'AUTH_KEY' ) || ! defined( 'SECURE_AUTH_KEY' ) ) {
+			return __( 'AUTH_KEY and/or SECURE_AUTH_KEY are not defined in wp-config.php. Erdo Client Preview needs both to securely sign magic link tokens and the bypass cookie.', 'erdo-client-preview' );
+		}
+
+		$placeholder = 'put your unique phrase here';
+
+		if ( '' === AUTH_KEY || '' === SECURE_AUTH_KEY || $placeholder === AUTH_KEY || $placeholder === SECURE_AUTH_KEY ) {
+			return __( 'AUTH_KEY and/or SECURE_AUTH_KEY are still empty or set to the wp-config-sample.php placeholder. Magic links and the bypass cookie rely on these being unique, random secrets — replace them with values from the WordPress.org secret-key generator.', 'erdo-client-preview' );
+		}
+
+		if ( AUTH_KEY === SECURE_AUTH_KEY ) {
+			return __( 'AUTH_KEY and SECURE_AUTH_KEY are set to the same value in wp-config.php. They should each be a distinct random secret — replace one of them with a fresh value from the WordPress.org secret-key generator.', 'erdo-client-preview' );
+		}
+
+		return '';
 	}
 }
