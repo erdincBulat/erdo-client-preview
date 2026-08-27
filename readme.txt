@@ -4,7 +4,7 @@ Tags:              coming soon, under construction, magic link, client preview, 
 Requires at least: 6.0
 Tested up to:      7.1
 Requires PHP:      7.4
-Stable tag:        1.4.0
+Stable tag:        1.5.0
 License:           GPLv2 or later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -191,6 +191,12 @@ Erdo Client Preview is developed in the open on GitHub: [github.com/erdincBulat/
 
 == Changelog ==
 
+= 1.5.0 =
+* Added: Import/Export Settings — download your configuration as a JSON file and re-import it on another site, useful for agencies rolling out the same setup across multiple client sites. The emergency rescue key is never exported and can't be overwritten by an import.
+* Added: A Site Health check flags AUTH_KEY/SECURE_AUTH_KEY when missing, empty, left at the default placeholder, or identical to each other — magic link tokens and the bypass cookie are signed with these, so a weak key quietly weakens that protection.
+* Security: The visitor feedback form now has a honeypot field and per-IP rate limiting (a short cooldown plus a rolling hourly cap) on both the REST and no-JS submission paths — previously the only anti-abuse measure was a nonce, which a script can read from the page and replay.
+* Changed: Tested up to WordPress 7.1.
+
 = 1.4.0 =
 * Changed: Renamed from "Erdo DevGate" to "Erdo Client Preview" (slug: erdo-client-preview)
 * Removed: Custom CSS field — WordPress.org no longer permits plugins to accept arbitrary user-supplied CSS
@@ -237,6 +243,9 @@ Erdo Client Preview is developed in the open on GitHub: [github.com/erdincBulat/
 * Initial release — coming soon / maintenance page with cryptographic magic link bypass, IP whitelist, admin bypass, HTTP 503/200 modes, countdown timer, and emergency rescue URL.
 
 == Upgrade Notice ==
+
+= 1.5.0 =
+Adds spam protection to the visitor feedback form, a Site Health check for your magic link signing keys, and Import/Export Settings for rolling the same setup out across client sites. Recommended for all users.
 
 = 1.1.0 =
 Major update: Coming Soon mode, scheduled maintenance with cron fallback, email subscriptions, per-link notifications, emergency rescue URL, admin bar toggle, and more. Recommended for all users.
