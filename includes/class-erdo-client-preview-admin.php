@@ -1294,8 +1294,10 @@ class Erdo_Client_Preview_Admin {
 			exit;
 		}
 
+		$tmp_name = sanitize_text_field( wp_unslash( $_FILES['erdo_client_preview_import_file']['tmp_name'] ) );
+
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
-		$raw  = file_get_contents( $_FILES['erdo_client_preview_import_file']['tmp_name'] );
+		$raw  = file_get_contents( $tmp_name );
 		$data = json_decode( (string) $raw, true );
 
 		if ( ! is_array( $data ) || 'erdo-client-preview' !== ( $data['plugin'] ?? '' ) || ! is_array( $data['settings'] ?? null ) ) {

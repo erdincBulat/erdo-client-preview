@@ -1,0 +1,9 @@
+.git
+.github
+.gitignore
+.distignore
+languages/*.pot
+node_modules
+*.zip
+.DS_Store
+Thumbs.db
