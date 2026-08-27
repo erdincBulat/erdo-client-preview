@@ -1294,10 +1294,13 @@ class Erdo_Client_Preview_Admin {
 			exit;
 		}
 
-		$tmp_name = sanitize_text_field( wp_unslash( $_FILES['erdo_client_preview_import_file']['tmp_name'] ) );
-
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
-		$raw  = file_get_contents( $tmp_name );
+		// $_FILES is never passed through WordPress' magic-quotes slashing (unlike
+		// $_GET/$_POST/$_COOKIE), and this value is a PHP-generated temp path, not
+		// user input — wp_unslash()/sanitize_text_field() would corrupt Windows path
+		// separators (stripslashes treats "\U", "\A", etc. as escape sequences) without
+		// adding any real sanitization, so it's deliberately left as-is.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
+		$raw  = file_get_contents( $_FILES['erdo_client_preview_import_file']['tmp_name'] );
 		$data = json_decode( (string) $raw, true );
 
 		if ( ! is_array( $data ) || 'erdo-client-preview' !== ( $data['plugin'] ?? '' ) || ! is_array( $data['settings'] ?? null ) ) {
